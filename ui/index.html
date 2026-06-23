@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>downer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="toolbar">
+    <span class="brand">downer</span>
+    <button type="button" data-cmd="new" title="New (Ctrl+N)">New</button>
+    <button type="button" data-cmd="open" title="Open (Ctrl+O)">Open</button>
+    <button type="button" data-cmd="save" title="Save (Ctrl+S)">Save</button>
+    <button type="button" data-cmd="saveas" title="Save As (Ctrl+Shift+S)">Save As</button>
+    <span class="tb-spacer"></span>
+    <button type="button" data-cmd="about" title="About downer">About</button>
+  </div>
+
+  <div id="app">
+    <div id="editor"></div>
+    <div id="divider" title="Drag to resize"></div>
+    <div id="preview-wrap">
+      <article id="preview" class="markdown-body"></article>
+    </div>
+  </div>
+
+  <div id="statusbar">
+    <span id="st-pos">Ln 1, Col 1</span>
+    <span class="st-sep">|</span>
+    <span id="st-counts">0 lines · 0 words · 0 characters</span>
+    <span class="st-spacer"></span>
+    <span id="st-save">New file</span>
+  </div>
+
+  <!--
+    Load order matters: markdown-it (UMD) must run BEFORE Monaco's AMD loader,
+    or it registers as an anonymous AMD module instead of window.markdownit.
+    tauri-api.js then defines window.api from the global __TAURI__ bridge.
+    Vendor assets are copied into ui/vendor by `npm run sync-assets`.
+  -->
+  <script src="vendor/markdown-it.min.js"></script>
+  <script src="vendor/monaco/vs/loader.js"></script>
+  <script src="tauri-api.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

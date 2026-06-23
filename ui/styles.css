@@ -1,0 +1,248 @@
+/* ------------------------------------------------------------------ *
+ * downer — minimal markdown editor styles                            *
+ * Light/dark follow the OS via prefers-color-scheme.                 *
+ * ------------------------------------------------------------------ */
+
+:root {
+  --editor-width: 33%;
+  --divider: #d0d7de;
+  --divider-hover: #0969da;
+  --preview-bg: #ffffff;
+  --preview-fg: #1f2328;
+
+  --chrome-bg: #f6f8fa;
+  --chrome-fg: #1f2328;
+  --chrome-border: #d0d7de;
+  --chrome-hover: rgba(0, 0, 0, 0.06);
+  --muted: #656d76;
+  --accent: #0969da;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --divider: #30363d;
+    --divider-hover: #4493f8;
+    --preview-bg: #0d1117;
+    --preview-fg: #e6edf3;
+
+    --chrome-bg: #161b22;
+    --chrome-fg: #e6edf3;
+    --chrome-border: #30363d;
+    --chrome-hover: rgba(255, 255, 255, 0.08);
+    --muted: #8b949e;
+    --accent: #4493f8;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+    Helvetica, Arial, sans-serif;
+}
+
+/* ---- toolbar ----------------------------------------------------- */
+#toolbar {
+  flex: 0 0 38px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--chrome-border);
+  user-select: none;
+  -webkit-user-select: none;
+}
+#toolbar .brand {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .02em;
+  margin-right: 10px;
+  padding-left: 2px;
+}
+#toolbar button {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--chrome-fg);
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+}
+#toolbar button:hover { background: var(--chrome-hover); }
+#toolbar button:active { transform: translateY(0.5px); }
+#toolbar .tb-spacer { flex: 1 1 auto; }
+
+/* ---- main split -------------------------------------------------- */
+#app {
+  flex: 1 1 auto;
+  min-height: 0;          /* critical: lets the row shrink so children get real height */
+  display: flex;
+  flex-direction: row;
+}
+
+#editor {
+  flex: 0 0 var(--editor-width);
+  height: 100%;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+#divider {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--divider);
+  transition: background 0.12s ease;
+}
+#divider:hover,
+#divider.dragging { background: var(--divider-hover); }
+
+#preview-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--preview-bg);
+  color: var(--preview-fg);
+}
+
+/* ---- status bar -------------------------------------------------- */
+#statusbar {
+  flex: 0 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--chrome-bg);
+  border-top: 1px solid var(--chrome-border);
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#statusbar .st-sep { opacity: .45; }
+#statusbar .st-spacer { flex: 1 1 auto; }
+#statusbar #st-save.dirty { color: var(--accent); }
+
+/* ------------------------------------------------------------------ *
+ * Rendered markdown (GitHub-flavored look, trimmed)                  *
+ * ------------------------------------------------------------------ */
+
+.markdown-body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 44px 96px;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.markdown-body > *:first-child { margin-top: 0; }
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin: 24px 0 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.markdown-body h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid var(--divider); }
+.markdown-body h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid var(--divider); }
+.markdown-body h3 { font-size: 1.25em; }
+.markdown-body h4 { font-size: 1em; }
+.markdown-body h5 { font-size: .875em; }
+.markdown-body h6 { font-size: .85em; color: #8b949e; }
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body table,
+.markdown-body pre { margin: 0 0 16px; }
+
+.markdown-body a { color: var(--divider-hover); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+
+.markdown-body ul, .markdown-body ol { padding-left: 2em; }
+.markdown-body li + li { margin-top: .25em; }
+.markdown-body li > ul, .markdown-body li > ol { margin: .25em 0 0; }
+
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: #6e7781;
+  border-left: .25em solid var(--divider);
+}
+@media (prefers-color-scheme: dark) {
+  .markdown-body blockquote { color: #8b949e; }
+}
+
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas,
+    "Liberation Mono", Menlo, monospace;
+  font-size: 85%;
+  padding: .2em .4em;
+  border-radius: 6px;
+  background: rgba(129, 139, 152, 0.18);
+}
+
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  border-radius: 8px;
+  font-size: 85%;
+  line-height: 1.45;
+  background: rgba(129, 139, 152, 0.13);
+}
+.markdown-body pre code {
+  padding: 0;
+  background: none;
+  font-size: 100%;
+}
+
+.markdown-body table { border-collapse: collapse; display: block; overflow: auto; }
+.markdown-body th, .markdown-body td {
+  padding: 6px 13px;
+  border: 1px solid var(--divider);
+}
+.markdown-body tr:nth-child(2n) { background: rgba(129, 139, 152, 0.08); }
+.markdown-body table th { font-weight: 600; }
+
+.markdown-body img { max-width: 100%; }
+
+.markdown-body hr {
+  height: 1px;
+  border: 0;
+  margin: 24px 0;
+  background: var(--divider);
+}
+
+/* Scrollbar — subtle */
+#preview-wrap::-webkit-scrollbar { width: 12px; height: 12px; }
+#preview-wrap::-webkit-scrollbar-thumb {
+  background: rgba(129, 139, 152, 0.4);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+#preview-wrap::-webkit-scrollbar-thumb:hover { background: rgba(129, 139, 152, 0.6); background-clip: padding-box; }
