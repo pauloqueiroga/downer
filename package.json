@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "sync-assets": "node scripts/sync-assets.mjs",
+    "test": "vitest run",
     "release": "node scripts/bump-version.mjs",
     "dev": "tauri dev",
     "build": "tauri build",
@@ -13,7 +14,9 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
+    "jsdom": "^29.1.1",
     "markdown-it": "^14.1.0",
-    "monaco-editor": "^0.55.1"
+    "monaco-editor": "^0.55.1",
+    "vitest": "^4.1.10"
   }
 }
