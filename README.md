@@ -63,6 +63,12 @@ npm run dev
 `ui/vendor/` (via `npm run sync-assets`), compiles the Rust shell, and opens the
 window. The first compile takes a minute; subsequent runs are fast.
 
+## Contributing
+
+See [`TASK-BOARD.md`](TASK-BOARD.md) for the current backlog and workflow. As you
+work, move items between stages (Wish List → To Do → In Progress → Done/Won't Do)
+and commit the updated board with your work.
+
 ## Build the Windows app + installer
 
 ```bash
@@ -73,6 +79,24 @@ This produces an NSIS installer under
 `src-tauri/target/release/bundle/nsis/` (e.g. `downer_1.0.0_x64-setup.exe`).
 Installing it registers `downer` as a handler for `.md` and `.markdown` files
 and creates shortcuts.
+
+## Releasing
+
+Every push to `main` runs a CI build (`.github/workflows/ci.yml`) that compiles
+the app and uploads the installer as a dev artifact — this catches build
+breakage on every merge but isn't an official release.
+
+To cut an official release:
+
+```bash
+npm run release -- patch   # or: minor | major | x.y.z
+```
+
+This bumps the version in `package.json`, `src-tauri/tauri.conf.json`, and
+`src-tauri/Cargo.toml` together, commits, tags (`vX.Y.Z`), and pushes both —
+requires a clean working tree. Pushing the tag triggers
+`.github/workflows/build.yml`, which verifies all three files agree with the
+tag, builds the installer, and uploads it as a release artifact.
 
 ## Make it the default for `.md` files
 

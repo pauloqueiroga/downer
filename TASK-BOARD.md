@@ -24,7 +24,6 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 ## To Do
 
 - Alert the user when they try to close downer with an modified (unsaved) file open. Let the user decide to save or not.
-- GitHub Actions pipeline to create Windows binaries.
 - GitHub releases
 - Sonarqube static analysis
 - GitHub Pages
@@ -33,7 +32,7 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 
 ## In Progress
 
-(nothing right now)
+- GitHub Actions pipeline to create Windows binaries
 
 ---
 
