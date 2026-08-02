@@ -45,6 +45,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run UI tests
+        run: npm test
+
+      - name: Run Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked
+
       - name: Build app
         run: npm run build
 

@@ -17,13 +17,13 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 
 - Binaries for MacOS and Linux
 - Accessibility audit (screen reader support, ARIA labels, focus management)
-- Comprehensive automated test suite, executing on pipeline
 
 ---
 
 ## To Do
 
 - Alert the user when they try to close downer with an modified (unsaved) file open. Let the user decide to save or not.
+- Address `npm audit` advisories: `dompurify` (via `monaco-editor`, moderate) and `linkify-it` (via `markdown-it`, high)
 - GitHub releases
 - Sonarqube static analysis
 - GitHub Pages
