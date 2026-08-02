@@ -632,7 +632,7 @@ dependencies = [
 
 [[package]]
 name = "downer"
-version = "1.0.1"
+version = "0.1.0"
 dependencies = [
  "open",
  "serde",

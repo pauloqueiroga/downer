@@ -5,6 +5,7 @@ import { execSync } from "node:child_process";
 const PACKAGE_JSON = "package.json";
 const TAURI_CONF = "src-tauri/tauri.conf.json";
 const CARGO_TOML = "src-tauri/Cargo.toml";
+const CARGO_LOCK = "src-tauri/Cargo.lock";
 
 function run(cmd) {
   return execSync(cmd, { encoding: "utf8" }).trim();
@@ -62,8 +63,12 @@ writeFileSync(
   cargoToml.replace(/^version = ".*"$/m, `version = "${newVersion}"`)
 );
 
+// Cargo.lock records the crate's own version, so it must be refreshed too or
+// CI's `cargo test --locked` fails on the stale entry.
+run(`cargo update --manifest-path ${CARGO_TOML} --workspace --offline`);
+
 const tag = `v${newVersion}`;
-run(`git add ${PACKAGE_JSON} ${TAURI_CONF} ${CARGO_TOML}`);
+run(`git add ${PACKAGE_JSON} ${TAURI_CONF} ${CARGO_TOML} ${CARGO_LOCK}`);
 run(`git commit -m "chore: bump version to ${newVersion}"`);
 run(`git tag -a ${tag} -m "${tag}"`);
 run("git push --follow-tags");
