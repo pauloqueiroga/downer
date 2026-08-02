@@ -4,13 +4,11 @@
  * downer renderer: Monaco source (left) + markdown-it preview (right) *
  * ------------------------------------------------------------------ */
 
+// ---- shared core (see ui/preview-core.js) --------------------------
+const { baseName, dirOf, sanitize } = window.downerCore;
+
 // ---- markdown-it ---------------------------------------------------
-const md = window.markdownit({
-  html: true,        // allow inline HTML (output is sanitized below)
-  linkify: true,     // auto-link bare URLs
-  typographer: true, // smart quotes / dashes
-  breaks: false
-});
+const md = window.markdownit(window.downerCore.MD_OPTIONS);
 
 // ---- DOM refs ------------------------------------------------------
 const preview = document.getElementById('preview');
@@ -29,15 +27,6 @@ let savedVerb = 'New file';
 let syncingScroll = false;
 
 // ---- helpers -------------------------------------------------------
-function baseName(p) {
-  if (!p) return 'Untitled';
-  return p.replace(/[\\/]+$/, '').split(/[\\/]/).pop();
-}
-
-function dirOf(p) {
-  return p.replace(/[\\/][^\\/]*$/, '');
-}
-
 function isDark() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
@@ -88,86 +77,13 @@ function updatePosition() {
   if (pos) stPos.textContent = `Ln ${pos.lineNumber}, Col ${pos.column}`;
 }
 
-// ---- resolve relative image paths against the open file's directory -
-// markdown like `![](images/x.png)` is relative to the file on disk; turn
-// it into an asset:// URL the WebView is allowed to load.
-function pathToFileUrl(p) {
-  let u = p.replace(/\\/g, '/');
-  if (/^[a-zA-Z]:/.test(u)) u = '/' + u; // C:/... -> /C:/...
-  return 'file://' + encodeURI(u);
-}
-
-function fileUrlToPath(u) {
-  let s = decodeURIComponent(u.replace(/^file:\/\//, ''));
-  if (/^\/[a-zA-Z]:/.test(s)) s = s.slice(1); // /C:/a -> C:/a
-  return s;
-}
-
-function resolveLocalPath(value, baseDir) {
-  if (!value) return null;
-  if (/^[a-zA-Z]:[\\/]/.test(value)) return value;       // already a Windows absolute path
-  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null;    // already has a scheme (http/data/asset/blob/...)
-  if (value.startsWith('//') || value.startsWith('#')) return null;
-  if (!baseDir) return null;                              // untitled buffer: nothing to resolve against
-  try {
-    return fileUrlToPath(new URL(value, pathToFileUrl(baseDir) + '/').href);
-  } catch { return null; }
-}
-
-// ---- sanitize rendered HTML before it touches the DOM --------------
-// innerHTML never executes <script>, but it DOES fire inline handlers
-// (e.g. <img onerror>) and follow javascript: URLs, so strip those.
-const BLOCKED_TAGS = new Set([
-  'script', 'iframe', 'object', 'embed', 'form', 'meta', 'base', 'link', 'style'
-]);
-
-function sanitize(root, baseDir) {
-  const elements = [];
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  let node = walker.currentNode;
-  while (node) {
-    elements.push(node);
-    node = walker.nextNode();
-  }
-  for (const el of elements) {
-    const tag = el.tagName.toLowerCase();
-    if (BLOCKED_TAGS.has(tag)) {
-      el.remove();
-      continue;
-    }
-    for (const attr of Array.from(el.attributes)) {
-      const name = attr.name.toLowerCase();
-      const raw = attr.value.trim();
-      const value = raw.toLowerCase();
-      if (name.startsWith('on')) {
-        el.removeAttribute(attr.name);
-        continue;
-      }
-      if (name === 'href' || name === 'src' || name === 'xlink:href') {
-        if (value.startsWith('javascript:') || value.startsWith('vbscript:')) {
-          el.removeAttribute(attr.name);
-          continue;
-        }
-        if (name === 'src' && value.startsWith('data:') &&
-            !value.startsWith('data:image/')) {
-          el.removeAttribute(attr.name);
-          continue;
-        }
-        if (tag === 'img' && name === 'src') {
-          const abs = resolveLocalPath(raw, baseDir);
-          if (abs) el.setAttribute('src', window.api.toAssetUrl(abs));
-        }
-      }
-    }
-  }
-}
-
 // ---- render --------------------------------------------------------
+// Markdown -> HTML -> sanitize (see ui/preview-core.js) -> preview DOM.
 function render() {
   const html = md.render(editor.getValue());
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
-  sanitize(tmp, currentPath ? dirOf(currentPath) : null);
+  sanitize(tmp, currentPath ? dirOf(currentPath) : null, window.api.toAssetUrl);
   preview.replaceChildren(...tmp.childNodes);
 }
 
