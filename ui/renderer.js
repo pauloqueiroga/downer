@@ -4,8 +4,9 @@
  * downer renderer: Monaco source (left) + markdown-it preview (right) *
  * ------------------------------------------------------------------ */
 
-// ---- shared core (see ui/preview-core.js) --------------------------
+// ---- shared core (see ui/preview-core.js, ui/close-guard.js) -------
 const { baseName, dirOf, sanitize } = window.downerCore;
+const { confirmClose } = window.downerCloseGuard;
 
 // ---- markdown-it ---------------------------------------------------
 const md = window.markdownit(window.downerCore.MD_OPTIONS);
@@ -16,6 +17,8 @@ const previewWrap = document.getElementById('preview-wrap');
 const stPos = document.getElementById('st-pos');
 const stCounts = document.getElementById('st-counts');
 const stSave = document.getElementById('st-save');
+const unsavedDialog = document.getElementById('unsaved');
+const unsavedText = document.getElementById('unsaved-text');
 
 // ---- editor state --------------------------------------------------
 let editor = null;
@@ -132,34 +135,50 @@ function confirmDiscardIfDirty() {
   return window.confirm('You have unsaved changes. Discard them?');
 }
 
+// Save / Don't Save / Cancel prompt shown when closing a dirty buffer.
+// Resolves 'save' | 'discard' | 'cancel'; Esc counts as cancel.
+function askUnsaved() {
+  unsavedText.textContent =
+    `${baseName(currentPath)} has unsaved changes. Save before closing?`;
+  return new Promise((resolve) => {
+    unsavedDialog.addEventListener(
+      'close',
+      () => resolve(unsavedDialog.returnValue || 'cancel'),
+      { once: true }
+    );
+    unsavedDialog.returnValue = '';   // don't inherit the previous answer
+    unsavedDialog.showModal();
+  });
+}
+
+// save/saveAs return true only when the content reached disk — the close
+// guard uses that to decide whether closing is safe.
 async function save() {
   const content = editor.getValue();
-  if (currentPath) {
-    const res = await window.api.save(currentPath, content);
-    if (res && res.ok) {
-      lastSaved = content;
-      lastSavedAt = new Date();
-      savedVerb = 'Saved';
-      setDirty(false);
-      updateSaveStatus();
-    }
-    return;
-  }
-  await saveAs();
+  if (!currentPath) return saveAs();
+
+  const res = await window.api.save(currentPath, content);
+  if (!res || !res.ok) return false;
+  lastSaved = content;
+  lastSavedAt = new Date();
+  savedVerb = 'Saved';
+  setDirty(false);
+  updateSaveStatus();
+  return true;
 }
 
 async function saveAs() {
   const content = editor.getValue();
   const res = await window.api.saveAs(content);
-  if (res && res.path) {
-    currentPath = res.path;
-    lastSaved = content;
-    lastSavedAt = new Date();
-    savedVerb = 'Saved';
-    setDirty(false);
-    updateTitle();
-    updateSaveStatus();
-  }
+  if (!res || !res.path) return false;
+  currentPath = res.path;
+  lastSaved = content;
+  lastSavedAt = new Date();
+  savedVerb = 'Saved';
+  setDirty(false);
+  updateTitle();
+  updateSaveStatus();
+  return true;
 }
 
 async function openFromDialog() {
@@ -303,6 +322,13 @@ require(['vs/editor/editor.main'], async function () {
     .addEventListener('change', (e) => {
       monaco.editor.setTheme(e.matches ? 'vs-dark' : 'vs');
     });
+
+  // Closing the window (X / Alt+F4) with unsaved changes: ask first.
+  window.api.onCloseRequested(() => confirmClose({
+    isDirty: () => dirty,
+    prompt: askUnsaved,
+    save
+  }));
 
   // A file handed to an already-running window (file association / 2nd launch).
   window.api.onOpenFile((data) => {

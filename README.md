@@ -37,7 +37,10 @@ instead of bundling a copy of Chromium.
 | `Ctrl + S` | Save |
 | `Ctrl + Shift + S` | Save As |
 
-An unsaved file shows a `●` in the title and the status bar.
+An unsaved file shows a `●` in the title and the status bar. Closing the window
+with unsaved changes asks first — **Save**, **Don't Save**, or **Cancel** (`Esc`
+cancels). If saving an untitled buffer, the Save As dialog opens; dismissing it
+leaves the window open rather than losing the text.
 
 ## Prerequisites
 

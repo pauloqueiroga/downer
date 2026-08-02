@@ -142,6 +142,41 @@ body {
 #statusbar .st-spacer { flex: 1 1 auto; }
 #statusbar #st-save.dirty { color: var(--accent); }
 
+/* ---- unsaved-changes dialog -------------------------------------- */
+#unsaved {
+  max-width: 420px;
+  padding: 0;
+  border: 1px solid var(--chrome-border);
+  border-radius: 10px;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  font: inherit;
+  font-size: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+#unsaved::backdrop { background: rgba(0, 0, 0, 0.35); }
+#unsaved form { padding: 20px 22px 16px; }
+#unsaved p { margin: 0 0 18px; line-height: 1.5; overflow-wrap: anywhere; }
+#unsaved .dlg-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+#unsaved button {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--chrome-fg);
+  cursor: pointer;
+}
+#unsaved button:hover { background: var(--chrome-hover); }
+#unsaved button[value="save"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+#unsaved button[value="save"]:hover { filter: brightness(1.1); }
+
 /* ------------------------------------------------------------------ *
  * Rendered markdown (GitHub-flavored look, trimmed)                  *
  * ------------------------------------------------------------------ */
