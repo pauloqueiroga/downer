@@ -1,6 +1,6 @@
 [package]
 name = "downer"
-version = "1.0.1"
+version = "0.1.0"
 description = "A minimal, fast local markdown editor"
 authors = ["PQ"]
 license = "MIT"
