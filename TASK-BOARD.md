@@ -32,7 +32,7 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 
 ## In Progress
 
-- GitHub Actions pipeline to create Windows binaries
+(nothing right now)
 
 ---
 
