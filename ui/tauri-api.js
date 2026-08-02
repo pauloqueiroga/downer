@@ -9,6 +9,7 @@
 
 const { invoke, convertFileSrc } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
+const { getCurrentWindow } = window.__TAURI__.window;
 const dialog = window.__TAURI__.dialog;
 
 const MD_FILTERS = [
@@ -68,5 +69,15 @@ window.api = {
   toAssetUrl: (path) => convertFileSrc(path),
 
   // A file handed to the running window (file association / 2nd launch).
-  onOpenFile: (cb) => listen('open-file', (event) => cb(event.payload))
+  onOpenFile: (cb) => listen('open-file', (event) => cb(event.payload)),
+
+  // Title-bar X / Alt+F4. Tauri holds the window open while a JS listener is
+  // registered and destroys it once the handler returns without preventing
+  // the default, so `cb` decides. A throwing guard keeps the window open —
+  // never lose a buffer to a bug in the prompt.
+  onCloseRequested: (cb) => getCurrentWindow().onCloseRequested(async (event) => {
+    let allow = false;
+    try { allow = await cb(); } catch (e) { allow = false; }
+    if (!allow) event.preventDefault();
+  })
 };

@@ -33,6 +33,18 @@
     <span id="st-save">New file</span>
   </div>
 
+  <!-- Shown when the window is closed with unsaved changes. -->
+  <dialog id="unsaved" aria-labelledby="unsaved-text">
+    <form method="dialog">
+      <p id="unsaved-text">This file has unsaved changes. Save before closing?</p>
+      <div class="dlg-buttons">
+        <button type="submit" value="save" autofocus>Save</button>
+        <button type="submit" value="discard">Don't Save</button>
+        <button type="submit" value="cancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
   <!--
     Load order matters: markdown-it (UMD) must run BEFORE Monaco's AMD loader,
     or it registers as an anonymous AMD module instead of window.markdownit.
@@ -42,6 +54,7 @@
   <script src="vendor/markdown-it.min.js"></script>
   <script src="vendor/monaco/vs/loader.js"></script>
   <script src="preview-core.js"></script>
+  <script src="close-guard.js"></script>
   <script src="tauri-api.js"></script>
   <script src="renderer.js"></script>
 </body>
