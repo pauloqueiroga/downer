@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "sync-assets": "node scripts/sync-assets.mjs",
+    "release": "node scripts/bump-version.mjs",
     "dev": "tauri dev",
     "build": "tauri build",
     "tauri": "tauri"
