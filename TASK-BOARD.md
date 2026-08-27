@@ -18,6 +18,8 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 - Binaries for MacOS and Linux
 - Accessibility audit (screen reader support, ARIA labels, focus management)
 - Use the Save / Don't Save / Cancel prompt for New and Open too (they still use a plain discard confirm)
+- Heading anchors: markdown-it emits no `id`s, so `[link](#section)` never resolves in the preview or in an export
+- Save As should suggest the current file name (it always offers `untitled.md`)
 
 ---
 
@@ -27,8 +29,7 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 - GitHub releases
 - Sonarqube static analysis
 - GitHub Pages
-- Save As HTML
-- Save As PDF
+- Save As PDF (can print the Save As HTML export — see `ui/export-html.js`)
 
 ---
 

@@ -24,8 +24,11 @@ instead of bundling a copy of Chromium.
 - Local images in your markdown (`![](images/pic.png)`) render, resolved
   relative to the file on disk.
 - Drag the divider to change the split.
-- Slim toolbar (New / Open / Save / Save As / About) plus a status bar with
-  cursor position, line/word/character counts, and last save time.
+- Export the rendered document as a standalone `.html` file (**Save As HTML**):
+  one file, styles inlined, light/dark aware, and print-friendly.
+- Slim toolbar (New / Open / Save / Save As / Save As HTML / About) plus a
+  status bar with cursor position, line/word/character counts, and last save
+  time.
 - Title bar shows the file name and full path: `name.md - downer (In C:\path\to\name.md)`.
 
 ### Shortcuts
@@ -36,6 +39,7 @@ instead of bundling a copy of Chromium.
 | `Ctrl + O` | Open |
 | `Ctrl + S` | Save |
 | `Ctrl + Shift + S` | Save As |
+| `Ctrl + Shift + H` | Save As HTML |
 
 An unsaved file shows a `●` in the title and the status bar. Closing the window
 with unsaved changes asks first — **Save**, **Don't Save**, or **Cancel** (`Esc`
@@ -120,6 +124,11 @@ the file loads into the existing window.
 - Rendered HTML is sanitized before insertion (inline event handlers,
   `javascript:` URLs, `<script>/<iframe>/<object>` etc. are stripped), so opening
   an untrusted `.md` can't run code.
+- **Save As HTML** re-renders the buffer through the same markdown-it +
+  sanitizer pipeline as the preview, then inlines the stylesheet, so the result
+  opens anywhere with no `asset:` URLs and no scripts. Local images are pointed
+  at their real files, relative to wherever the export is saved — keep the
+  export next to the markdown and its images keep working.
 - Local images are loaded via Tauri's `asset:` protocol. The asset scope in
   `tauri.conf.json` is broad (`**/*`) so images next to any opened file work; if
   you only ever open files under one folder, narrow it for tighter security.
