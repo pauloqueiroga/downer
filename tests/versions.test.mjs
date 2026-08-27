@@ -10,6 +10,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(resolve(root, p), 'utf8');
 
 const pkgVersion = JSON.parse(read('package.json')).version;
+const lock = JSON.parse(read('package-lock.json'));
 const confVersion = JSON.parse(read('src-tauri/tauri.conf.json')).version;
 const cargoVersion = read('src-tauri/Cargo.toml').match(/^version = "(.*)"$/m)?.[1];
 
@@ -24,5 +25,12 @@ describe('version consistency', () => {
 
   it('Cargo.toml matches package.json', () => {
     expect(cargoVersion).toBe(pkgVersion);
+  });
+
+  // npm rewrites both of these on the next install, so drift here shows up
+  // as a surprise diff in an unrelated PR.
+  it('package-lock.json matches package.json', () => {
+    expect(lock.version).toBe(pkgVersion);
+    expect(lock.packages[''].version).toBe(pkgVersion);
   });
 });

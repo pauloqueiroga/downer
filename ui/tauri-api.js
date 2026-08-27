@@ -38,6 +38,15 @@ window.api = {
     catch (e) { return null; }
   },
 
+  // Prompt for an .html destination (Save As HTML). -> path | null
+  chooseHtmlPath: async (defaultName) => {
+    const path = await dialog.save({
+      defaultPath: defaultName,
+      filters: [{ name: 'HTML', extensions: ['html', 'htm'] }]
+    });
+    return path || null;
+  },
+
   // Open-file dialog, then read. -> { path, content } | null
   open: async () => {
     const path = await dialog.open({ multiple: false, directory: false, filters: MD_FILTERS });

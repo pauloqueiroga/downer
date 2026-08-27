@@ -6,6 +6,7 @@ const PACKAGE_JSON = "package.json";
 const TAURI_CONF = "src-tauri/tauri.conf.json";
 const CARGO_TOML = "src-tauri/Cargo.toml";
 const CARGO_LOCK = "src-tauri/Cargo.lock";
+const PACKAGE_LOCK = "package-lock.json";
 
 function run(cmd) {
   return execSync(cmd, { encoding: "utf8" }).trim();
@@ -53,6 +54,14 @@ const pkg = readJson(PACKAGE_JSON);
 pkg.version = newVersion;
 writeFileSync(PACKAGE_JSON, JSON.stringify(pkg, null, 2) + "\n");
 
+// package-lock.json records the version twice; npm rewrites both on the
+// next install, so bump them here or the lock silently drifts from
+// package.json until someone runs `npm install`.
+const lock = readJson(PACKAGE_LOCK);
+lock.version = newVersion;
+if (lock.packages?.[""]) lock.packages[""].version = newVersion;
+writeFileSync(PACKAGE_LOCK, JSON.stringify(lock, null, 2) + "\n");
+
 const tauriConf = readJson(TAURI_CONF);
 tauriConf.version = newVersion;
 writeFileSync(TAURI_CONF, JSON.stringify(tauriConf, null, 2) + "\n");
@@ -68,7 +77,7 @@ writeFileSync(
 run(`cargo update --manifest-path ${CARGO_TOML} --workspace --offline`);
 
 const tag = `v${newVersion}`;
-run(`git add ${PACKAGE_JSON} ${TAURI_CONF} ${CARGO_TOML} ${CARGO_LOCK}`);
+run(`git add ${PACKAGE_JSON} ${PACKAGE_LOCK} ${TAURI_CONF} ${CARGO_TOML} ${CARGO_LOCK}`);
 run(`git commit -m "chore: bump version to ${newVersion}"`);
 run(`git tag -a ${tag} -m "${tag}"`);
 run("git push --follow-tags");

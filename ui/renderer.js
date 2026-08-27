@@ -6,6 +6,8 @@
 
 // ---- shared core (see ui/preview-core.js, ui/close-guard.js) -------
 const { baseName, dirOf, sanitize } = window.downerCore;
+const { docTitle, defaultExportPath, ensureHtmlExt, rewriteImagesForExport,
+        buildHtmlDocument } = window.downerExport;
 const { confirmClose } = window.downerCloseGuard;
 
 // ---- markdown-it ---------------------------------------------------
@@ -44,7 +46,24 @@ function updateTitle() {
   window.api.setTitle(`${dirty ? '● ' : ''}${name} - downer${loc}`);
 }
 
+// A short-lived status-bar message (export finished, export failed).
+// Any real status change — typing, saving — takes the line back.
+let statusFlashTimer = null;
+function flashStatus(text) {
+  if (statusFlashTimer) clearTimeout(statusFlashTimer);
+  stSave.classList.remove('dirty');
+  stSave.textContent = text;
+  statusFlashTimer = setTimeout(() => {
+    statusFlashTimer = null;
+    updateSaveStatus();
+  }, 2500);
+}
+
 function updateSaveStatus() {
+  if (statusFlashTimer) {
+    clearTimeout(statusFlashTimer);
+    statusFlashTimer = null;
+  }
   if (dirty) {
     stSave.textContent = '● Unsaved changes';
     stSave.classList.add('dirty');
@@ -181,6 +200,32 @@ async function saveAs() {
   return true;
 }
 
+// ---- Save As HTML ---------------------------------------------------
+// The preview as a standalone document: markdown -> HTML -> the same
+// sanitizer the preview uses -> inline stylesheet. Images stay local
+// files, rewritten relative to wherever the export lands, so an export
+// saved next to its markdown keeps rendering them.
+function buildExport(outPath) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = md.render(editor.getValue());
+  sanitize(tmp, null, null);   // no asset: rewriting — that's app-only
+  rewriteImagesForExport(
+    tmp,
+    currentPath ? dirOf(currentPath) : null,
+    dirOf(outPath)
+  );
+  return buildHtmlDocument(docTitle(currentPath), tmp.innerHTML);
+}
+
+async function saveAsHtml() {
+  const chosen = await window.api.chooseHtmlPath(defaultExportPath(currentPath));
+  if (!chosen) return false;                 // dialog dismissed
+  const path = ensureHtmlExt(chosen);
+  const res = await window.api.save(path, buildExport(path));
+  flashStatus(res && res.ok ? `Exported ${baseName(path)}` : 'HTML export failed');
+  return !!(res && res.ok);
+}
+
 async function openFromDialog() {
   if (!confirmDiscardIfDirty()) return;
   const res = await window.api.open();
@@ -196,6 +241,7 @@ document.getElementById('toolbar').addEventListener('click', (e) => {
     case 'open': openFromDialog(); break;
     case 'save': save(); break;
     case 'saveas': saveAs(); break;
+    case 'savehtml': saveAsHtml(); break;
     case 'about': window.api.about(); break;
   }
 });
@@ -268,7 +314,8 @@ function setupShortcuts() {
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const key = e.key.toLowerCase();
-    if (key === 's' && e.shiftKey) { e.preventDefault(); saveAs(); }
+    if (key === 'h' && e.shiftKey) { e.preventDefault(); saveAsHtml(); }
+    else if (key === 's' && e.shiftKey) { e.preventDefault(); saveAs(); }
     else if (key === 's') { e.preventDefault(); save(); }
     else if (key === 'o') { e.preventDefault(); openFromDialog(); }
     else if (key === 'n') { e.preventDefault(); newDocument(); }
