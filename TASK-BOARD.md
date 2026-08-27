@@ -27,6 +27,8 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 - GitHub releases
 - Sonarqube static analysis
 - GitHub Pages
+- Save As HTML
+- Save As PDF
 
 ---
 
