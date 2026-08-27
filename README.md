@@ -26,9 +26,12 @@ instead of bundling a copy of Chromium.
 - Drag the divider to change the split.
 - Export the rendered document as a standalone `.html` file (**Save As HTML**):
   one file, styles inlined, light/dark aware, and print-friendly.
-- Slim toolbar (New / Open / Save / Save As / Save As HTML / About) plus a
-  status bar with cursor position, line/word/character counts, and last save
-  time.
+- Print the rendered document, or save it as a PDF (**Save As PDF**): opens
+  the Windows print dialog on the same page the HTML export produces — pick
+  **Microsoft Print to PDF** (or any PDF printer) to write the file.
+- Slim toolbar (New / Open / Save / Save As / Save As HTML / Save As PDF /
+  About) plus a status bar with cursor position, line/word/character counts,
+  and last save time.
 - Title bar shows the file name and full path: `name.md - downer (In C:\path\to\name.md)`.
 
 ### Shortcuts
@@ -40,6 +43,7 @@ instead of bundling a copy of Chromium.
 | `Ctrl + S` | Save |
 | `Ctrl + Shift + S` | Save As |
 | `Ctrl + Shift + H` | Save As HTML |
+| `Ctrl + Shift + P` | Save As PDF |
 
 An unsaved file shows a `●` in the title and the status bar. Closing the window
 with unsaved changes asks first — **Save**, **Don't Save**, or **Cancel** (`Esc`
@@ -129,6 +133,12 @@ the file loads into the existing window.
   opens anywhere with no `asset:` URLs and no scripts. Local images are pointed
   at their real files, relative to wherever the export is saved — keep the
   export next to the markdown and its images keep working.
+- **Save As PDF** prints rather than writes: downer bundles no PDF engine, so
+  the export document (same pipeline, plus print rules — page margins, no page
+  breaks inside code blocks or tables, white paper in dark mode) is loaded into
+  an offscreen frame and that frame is printed. Windows' PDF printer does the
+  saving, and the document title becomes the suggested file name. Images use
+  `asset:` URLs there, since the page is printed from inside the app.
 - Local images are loaded via Tauri's `asset:` protocol. The asset scope in
   `tauri.conf.json` is broad (`**/*`) so images next to any opened file work; if
   you only ever open files under one folder, narrow it for tighter security.

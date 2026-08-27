@@ -206,7 +206,11 @@ body {
   }
 
   // ---- the document --------------------------------------------------
-  function buildHtmlDocument(title, body) {
+  // `extraCss` is appended after the export stylesheet, so a caller can
+  // override any of it by declaring the same rule (the PDF export layers
+  // its print rules on this way) — plain CSS order, no specificity games.
+  function buildHtmlDocument(title, body, extraCss) {
+    const css = extraCss ? `${EXPORT_CSS}\n${extraCss}` : EXPORT_CSS;
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -215,7 +219,7 @@ body {
 <meta name="generator" content="downer">
 <title>${escapeHtml(title)}</title>
 <style>
-${EXPORT_CSS}
+${css}
 </style>
 </head>
 <body>
