@@ -337,41 +337,50 @@ mod tests {
 
     // ---- file_from_urls ------------------------------------------------
 
-    fn urls(items: &[&str]) -> Vec<tauri::Url> {
-        items.iter().map(|s| tauri::Url::parse(s).unwrap()).collect()
+    // An absolute path that does not exist, spelled the way the host OS spells
+    // paths. Url::to_file_path rejects a Unix-style path on Windows, where a
+    // file URL needs a drive letter, so neither form can be hard-coded.
+    fn absent(name: &str) -> String {
+        std::env::temp_dir().join(name).to_string_lossy().to_string()
+    }
+
+    fn file_url(name: &str) -> tauri::Url {
+        tauri::Url::from_file_path(absent(name)).unwrap()
     }
 
     #[test]
     fn file_from_urls_finds_the_markdown_file() {
-        let got = file_from_urls(&urls(&["file:///tmp/missing-notes.md"]));
-        assert_eq!(got, Some("/tmp/missing-notes.md".to_string()));
+        let got = file_from_urls(&[file_url("missing-notes.md")]);
+        assert_eq!(got, Some(absent("missing-notes.md")));
     }
 
     #[test]
     fn file_from_urls_returns_the_first_markdown_path() {
-        let got = file_from_urls(&urls(&[
-            "file:///tmp/missing-photo.png",
-            "file:///tmp/missing-a.md",
-            "file:///tmp/missing-b.md",
-        ]));
-        assert_eq!(got, Some("/tmp/missing-a.md".to_string()));
+        let got = file_from_urls(&[
+            file_url("missing-photo.png"),
+            file_url("missing-a.md"),
+            file_url("missing-b.md"),
+        ]);
+        assert_eq!(got, Some(absent("missing-a.md")));
     }
 
     #[test]
     fn file_from_urls_ignores_non_file_schemes() {
-        assert_eq!(file_from_urls(&urls(&["https://example.com/notes.md"])), None);
+        let url = tauri::Url::parse("https://example.com/notes.md").unwrap();
+        assert_eq!(file_from_urls(&[url]), None);
     }
 
     #[test]
     fn file_from_urls_returns_none_without_markdown() {
-        assert_eq!(file_from_urls(&urls(&["file:///tmp/missing-photo.png"])), None);
+        assert_eq!(file_from_urls(&[file_url("missing-photo.png")]), None);
         assert_eq!(file_from_urls(&[]), None);
     }
 
     #[test]
     fn file_from_urls_decodes_percent_escapes() {
-        let got = file_from_urls(&urls(&["file:///tmp/missing%20notes.md"]));
-        assert_eq!(got, Some("/tmp/missing notes.md".to_string()));
+        let url = file_url("missing notes.md");
+        assert!(url.as_str().contains("%20"), "space should be escaped: {url}");
+        assert_eq!(file_from_urls(&[url]), Some(absent("missing notes.md")));
     }
 
     // ---- OpenState -------------------------------------------------------
