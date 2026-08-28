@@ -83,10 +83,16 @@ body {
   border-radius: 6px;
   cursor: pointer;
   line-height: 1;
+  flex: 0 0 auto;       /* a full bar of buttons: labels keep their width, on one line */
+  white-space: nowrap;
 }
 #toolbar button:hover { background: var(--chrome-hover); }
 #toolbar button:active { transform: translateY(0.5px); }
 #toolbar .tb-spacer { flex: 1 1 auto; }
+/* The buttons need the whole bar in a narrow window; the wordmark doesn't. */
+@media (max-width: 760px) {
+  #toolbar .brand { display: none; }
+}
 
 /* ---- main split -------------------------------------------------- */
 #app {

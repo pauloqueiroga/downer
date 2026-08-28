@@ -11,6 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FILES = [
   'ui/preview-core.js',
   'ui/export-html.js',
+  'ui/export-pdf.js',
   'ui/close-guard.js',
   'ui/renderer.js',
   'ui/tauri-api.js',

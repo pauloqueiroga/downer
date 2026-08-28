@@ -20,6 +20,7 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 - Use the Save / Don't Save / Cancel prompt for New and Open too (they still use a plain discard confirm)
 - Heading anchors: markdown-it emits no `id`s, so `[link](#section)` never resolves in the preview or in an export
 - Save As should suggest the current file name (it always offers `untitled.md`)
+- Write PDFs directly, without the print dialog (needs a PDF engine — Save As PDF prints instead)
 
 ---
 
@@ -29,7 +30,6 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 - GitHub releases
 - Sonarqube static analysis
 - GitHub Pages
-- Save As PDF (can print the Save As HTML export — see `ui/export-html.js`)
 
 ---
 
