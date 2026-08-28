@@ -7,7 +7,27 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundle: nsis/*.exe
+            config: ""
+          - platform: macos-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            bundle: dmg/*.dmg
+            config: --config src-tauri/tauri.macos.conf.json
+          - platform: macos-x64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            bundle: dmg/*.dmg
+            config: --config src-tauri/tauri.macos.conf.json
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -36,11 +56,14 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          key: ${{ matrix.target }}
 
       - name: Install dependencies
         run: npm ci
@@ -53,11 +76,18 @@ jobs:
         run: cargo test --locked
 
       - name: Build app
-        run: npm run build
+        run: npm run build -- --target ${{ matrix.target }} ${{ matrix.config }}
+
+      - name: Check the app is signed
+        if: runner.os == 'macOS'
+        run: |
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/downer.app"
+          codesign --display --verbose=2 "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
 
       - name: Upload installer
         uses: actions/upload-artifact@v5
         with:
-          name: downer-${{ github.ref_name }}-windows
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          name: downer-${{ github.ref_name }}-${{ matrix.platform }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/${{ matrix.bundle }}
           if-no-files-found: error

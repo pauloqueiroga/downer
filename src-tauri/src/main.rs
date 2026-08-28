@@ -9,6 +9,43 @@ struct FileData {
     content: String,
 }
 
+// Where a file the OS asked us to open waits for the frontend.
+//
+// Windows passes the path in argv, so it is readable whenever the frontend
+// asks. macOS instead delivers it as an Apple Event (`RunEvent::Opened`) that
+// can fire before the webview exists, so the path parks here until
+// `get_opened_file` collects it.
+#[derive(Default)]
+struct OpenState(std::sync::Mutex<Pending>);
+
+#[derive(Default)]
+struct Pending {
+    path: Option<String>,
+    frontend_ready: bool,
+}
+
+impl OpenState {
+    // The frontend is asking for its startup file, so it is listening from now
+    // on. Hand over anything the OS queued before it was ready.
+    fn take_pending(&self) -> Option<String> {
+        let mut pending = self.0.lock().unwrap();
+        pending.frontend_ready = true;
+        pending.path.take()
+    }
+
+    // The OS wants us to open a file. Returns the path when the frontend can
+    // receive it now; otherwise queues it and returns None.
+    fn deliver(&self, path: String) -> Option<String> {
+        let mut pending = self.0.lock().unwrap();
+        if pending.frontend_ready {
+            Some(path)
+        } else {
+            pending.path = Some(path);
+            None
+        }
+    }
+}
+
 const MD_EXTS: [&str; 9] = [
     "md", "markdown", "mdown", "mkd", "mkdn", "mdwn", "mdtxt", "text", "txt",
 ];
@@ -35,6 +72,20 @@ fn file_from_args(args: &[String]) -> Option<String> {
         }
     }
     None
+}
+
+// Find the markdown file among the URLs macOS hands over on an open request.
+fn file_from_urls(urls: &[tauri::Url]) -> Option<String> {
+    urls.iter()
+        .filter_map(|u| u.to_file_path().ok())
+        .map(|p| p.to_string_lossy().to_string())
+        .find(|p| is_md(p))
+        .map(|p| normalize_path(&p))
+}
+
+fn read_into_file_data(path: String) -> Option<FileData> {
+    let content = std::fs::read_to_string(&path).ok()?;
+    Some(FileData { path, content })
 }
 
 // Resolve to an absolute path WITHOUT the Windows extended-length prefix.
@@ -66,13 +117,18 @@ fn write_file(path: String, content: String) -> Result<(), String> {
     std::fs::write(&path, content).map_err(|e| e.to_string())
 }
 
-// File supplied at launch (first instance), if any.
+// File supplied at launch (first instance), if any: whatever the OS queued
+// before the frontend was listening, else the command line (Windows).
 #[tauri::command]
-fn get_opened_file() -> Option<FileData> {
-    let args: Vec<String> = std::env::args().collect();
-    let path = file_from_args(&args)?;
-    let content = std::fs::read_to_string(&path).ok()?;
-    Some(FileData { path, content })
+fn get_opened_file(state: tauri::State<'_, OpenState>) -> Option<FileData> {
+    let path = match state.take_pending() {
+        Some(path) => path,
+        None => {
+            let args: Vec<String> = std::env::args().collect();
+            file_from_args(&args)?
+        }
+    };
+    read_into_file_data(path)
 }
 
 #[tauri::command]
@@ -90,6 +146,15 @@ fn open_external(url: String) {
 #[tauri::command]
 fn get_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+// Save As PDF works by printing the export document from the WebView, and
+// WKWebView implements no print support at all, so the whole command is
+// Windows-only. The frontend asks here and hides it rather than offering a
+// button that silently does nothing.
+#[tauri::command]
+fn is_macos() -> bool {
+    cfg!(target_os = "macos")
 }
 
 #[cfg(test)]
@@ -270,6 +335,111 @@ mod tests {
         assert!(!err.is_empty());
     }
 
+    // ---- file_from_urls ------------------------------------------------
+
+    // An absolute path that does not exist, spelled the way the host OS spells
+    // paths. Url::to_file_path rejects a Unix-style path on Windows, where a
+    // file URL needs a drive letter, so neither form can be hard-coded.
+    fn absent(name: &str) -> String {
+        std::env::temp_dir().join(name).to_string_lossy().to_string()
+    }
+
+    fn file_url(name: &str) -> tauri::Url {
+        tauri::Url::from_file_path(absent(name)).unwrap()
+    }
+
+    #[test]
+    fn file_from_urls_finds_the_markdown_file() {
+        let got = file_from_urls(&[file_url("missing-notes.md")]);
+        assert_eq!(got, Some(absent("missing-notes.md")));
+    }
+
+    #[test]
+    fn file_from_urls_returns_the_first_markdown_path() {
+        let got = file_from_urls(&[
+            file_url("missing-photo.png"),
+            file_url("missing-a.md"),
+            file_url("missing-b.md"),
+        ]);
+        assert_eq!(got, Some(absent("missing-a.md")));
+    }
+
+    #[test]
+    fn file_from_urls_ignores_non_file_schemes() {
+        let url = tauri::Url::parse("https://example.com/notes.md").unwrap();
+        assert_eq!(file_from_urls(&[url]), None);
+    }
+
+    #[test]
+    fn file_from_urls_returns_none_without_markdown() {
+        assert_eq!(file_from_urls(&[file_url("missing-photo.png")]), None);
+        assert_eq!(file_from_urls(&[]), None);
+    }
+
+    #[test]
+    fn file_from_urls_decodes_percent_escapes() {
+        let url = file_url("missing notes.md");
+        assert!(url.as_str().contains("%20"), "space should be escaped: {url}");
+        assert_eq!(file_from_urls(&[url]), Some(absent("missing notes.md")));
+    }
+
+    // ---- OpenState -------------------------------------------------------
+
+    #[test]
+    fn open_before_the_frontend_is_ready_waits_for_it() {
+        let state = OpenState::default();
+
+        // Nothing to emit yet: the renderer is not listening.
+        assert_eq!(state.deliver("/tmp/a.md".to_string()), None);
+        // The startup call collects it instead.
+        assert_eq!(state.take_pending(), Some("/tmp/a.md".to_string()));
+    }
+
+    #[test]
+    fn open_after_the_frontend_is_ready_goes_straight_out() {
+        let state = OpenState::default();
+        state.take_pending();
+
+        assert_eq!(
+            state.deliver("/tmp/a.md".to_string()),
+            Some("/tmp/a.md".to_string())
+        );
+        // Delivered, not queued, so a later startup call finds nothing.
+        assert_eq!(state.take_pending(), None);
+    }
+
+    #[test]
+    fn a_queued_file_is_only_handed_over_once() {
+        let state = OpenState::default();
+        state.deliver("/tmp/a.md".to_string());
+
+        assert_eq!(state.take_pending(), Some("/tmp/a.md".to_string()));
+        assert_eq!(state.take_pending(), None);
+    }
+
+    #[test]
+    fn take_pending_is_none_when_nothing_was_opened() {
+        assert_eq!(OpenState::default().take_pending(), None);
+    }
+
+    #[test]
+    fn a_later_open_replaces_one_still_queued() {
+        let state = OpenState::default();
+        state.deliver("/tmp/a.md".to_string());
+        state.deliver("/tmp/b.md".to_string());
+
+        assert_eq!(state.take_pending(), Some("/tmp/b.md".to_string()));
+    }
+
+    // ---- is_macos --------------------------------------------------------
+
+    #[test]
+    fn is_macos_agrees_with_the_running_platform() {
+        // cfg! is resolved at compile time, env::consts::OS at run time; on a
+        // native build they must agree.
+        assert_eq!(is_macos(), std::env::consts::OS == "macos");
+    }
+
     // ---- get_version ----------------------------------------------------
 
     #[test]
@@ -283,19 +453,49 @@ mod tests {
     }
 }
 
+// macOS asks a running app to open further files instead of starting a second
+// process, so push the file at the window the renderer already has open (it
+// listens for "open-file" and prompts about unsaved changes itself).
+#[cfg(target_os = "macos")]
+fn handle_opened(app: &tauri::AppHandle, urls: Vec<tauri::Url>) {
+    use tauri::{Emitter, Manager};
+
+    let Some(path) = file_from_urls(&urls) else {
+        return;
+    };
+    // Before the frontend is ready this only queues the path, and the initial
+    // get_opened_file call picks it up instead.
+    if let Some(path) = app.state::<OpenState>().deliver(path) {
+        if let Some(data) = read_into_file_data(path) {
+            let _ = app.emit("open-file", data);
+        }
+    }
+}
+
 fn main() {
-    // No single-instance plugin: each .md opened from Explorer launches its own
-    // process and window, so multiple files can be open side by side.
-    tauri::Builder::default()
+    // No single-instance plugin: on Windows each .md opened from Explorer
+    // launches its own process and window, so multiple files can be open side
+    // by side. macOS routes every open through the one running instance, which
+    // handle_opened feeds into the existing window.
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(OpenState::default())
         .invoke_handler(tauri::generate_handler![
             read_file,
             write_file,
             get_opened_file,
             set_title,
             open_external,
-            get_version
+            get_version,
+            is_macos
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app, _event| {
+        #[cfg(target_os = "macos")]
+        if let tauri::RunEvent::Opened { urls } = _event {
+            handle_opened(_app, urls);
+        }
+    });
 }

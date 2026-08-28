@@ -21,7 +21,6 @@ const stPos = document.getElementById('st-pos');
 const stCounts = document.getElementById('st-counts');
 const stSave = document.getElementById('st-save');
 const unsavedDialog = document.getElementById('unsaved');
-const unsavedText = document.getElementById('unsaved-text');
 
 // ---- editor state --------------------------------------------------
 let editor = null;
@@ -156,19 +155,14 @@ function confirmDiscardIfDirty() {
 }
 
 // Save / Don't Save / Cancel prompt shown when closing a dirty buffer.
-// Resolves 'save' | 'discard' | 'cancel'; Esc counts as cancel.
+// Resolves 'save' | 'discard' | 'cancel'; Esc counts as cancel. The opening
+// and closing live in unsaved-dialog.js, which does not lean on <dialog>
+// being supported.
 function askUnsaved() {
-  unsavedText.textContent =
-    `${baseName(currentPath)} has unsaved changes. Save before closing?`;
-  return new Promise((resolve) => {
-    unsavedDialog.addEventListener(
-      'close',
-      () => resolve(unsavedDialog.returnValue || 'cancel'),
-      { once: true }
-    );
-    unsavedDialog.returnValue = '';   // don't inherit the previous answer
-    unsavedDialog.showModal();
-  });
+  return window.downerUnsaved.ask(
+    unsavedDialog,
+    `${baseName(currentPath)} has unsaved changes. Save before closing?`
+  );
 }
 
 // save/saveAs return true only when the content reached disk — the close
@@ -251,6 +245,27 @@ async function openFromDialog() {
   if (res) loadDocument(res.path, res.content);
 }
 
+// ---- Save As PDF availability --------------------------------------
+// Printing is how the PDF export works, and WKWebView cannot print, so the
+// command is hidden on macOS instead of being left to do nothing. Asked for
+// as early as possible so the button does not flash before it goes away.
+let pdfSupported = true;
+
+function setPdfSupported(supported) {
+  pdfSupported = supported;
+  const btn = document.querySelector('button[data-cmd="savepdf"]');
+  if (btn) btn.hidden = !supported;
+}
+
+// Asking Rust costs a round trip, and the button would sit there visible for
+// the length of it before disappearing. The user agent knows the platform
+// synchronously, so guess from it first and let Rust — the authority — settle
+// it a moment later. A failed invoke leaves the guess standing.
+setPdfSupported(!/Mac/i.test(navigator.userAgent || ''));
+Promise.resolve(window.api.isMacOS?.())
+  .then((isMac) => setPdfSupported(!isMac))
+  .catch(() => { /* keep whatever the user agent suggested */ });
+
 // ---- toolbar -------------------------------------------------------
 document.getElementById('toolbar').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-cmd]');
@@ -261,7 +276,7 @@ document.getElementById('toolbar').addEventListener('click', (e) => {
     case 'save': save(); break;
     case 'saveas': saveAs(); break;
     case 'savehtml': saveAsHtml(); break;
-    case 'savepdf': saveAsPdf(); break;
+    case 'savepdf': if (pdfSupported) saveAsPdf(); break;
     case 'about': window.api.about(); break;
   }
 });
@@ -335,7 +350,7 @@ function setupShortcuts() {
     if (!mod) return;
     const key = e.key.toLowerCase();
     if (key === 'h' && e.shiftKey) { e.preventDefault(); saveAsHtml(); }
-    else if (key === 'p' && e.shiftKey) { e.preventDefault(); saveAsPdf(); }
+    else if (key === 'p' && e.shiftKey && pdfSupported) { e.preventDefault(); saveAsPdf(); }
     else if (key === 's' && e.shiftKey) { e.preventDefault(); saveAs(); }
     else if (key === 's') { e.preventDefault(); save(); }
     else if (key === 'o') { e.preventDefault(); openFromDialog(); }

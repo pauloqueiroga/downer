@@ -15,7 +15,9 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 
 ## Wish List
 
-- Binaries for MacOS and Linux
+- Binaries for Linux
+- Save As PDF on macOS: WKWebView ignores `window.print()`, so the print-a-hidden-frame approach has nothing to hook into. The button and shortcut are hidden there (`is_macos`), not removed — un-hide them in `renderer.js` once there is an engine behind them
+- Toolbar tooltips say `Ctrl` on macOS, though the shortcuts themselves already accept `Cmd`
 - Accessibility audit (screen reader support, ARIA labels, focus management)
 - Use the Save / Don't Save / Cancel prompt for New and Open too (they still use a plain discard confirm)
 - Heading anchors: markdown-it emits no `id`s, so `[link](#section)` never resolves in the preview or in an export

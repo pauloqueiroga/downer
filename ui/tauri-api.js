@@ -71,6 +71,10 @@ window.api = {
     );
   },
 
+  // Is this a macOS build? Save As PDF prints through the WebView, which
+  // WKWebView does not support, so the toolbar drops it there. -> bool
+  isMacOS: () => invoke('is_macos'),
+
   // Set the native window title.
   setTitle: (title) => invoke('set_title', { title }),
 

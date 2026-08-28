@@ -13,6 +13,7 @@ const FILES = [
   'ui/export-html.js',
   'ui/export-pdf.js',
   'ui/close-guard.js',
+  'ui/unsaved-dialog.js',
   'ui/renderer.js',
   'ui/tauri-api.js',
   'scripts/sync-assets.mjs',

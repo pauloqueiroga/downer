@@ -35,16 +35,22 @@
     <span id="st-save">New file</span>
   </div>
 
-  <!-- Shown when the window is closed with unsaved changes. -->
-  <dialog id="unsaved" aria-labelledby="unsaved-text">
-    <form method="dialog">
-      <p id="unsaved-text">This file has unsaved changes. Save before closing?</p>
+  <!--
+    Shown when the window is closed with unsaved changes. Deliberately not a
+    <form method="dialog">: where <dialog> is unsupported that method falls
+    back to GET, so pressing a button submitted the form and reloaded the app.
+    Plain buttons, read by unsaved-dialog.js. role/aria-modal are spelled out
+    because an unsupported <dialog> carries no implicit role.
+  -->
+  <dialog id="unsaved" role="dialog" aria-modal="true" aria-labelledby="unsaved-text">
+    <div class="dlg-body">
+      <p id="unsaved-text" data-role="message">This file has unsaved changes. Save before closing?</p>
       <div class="dlg-buttons">
-        <button type="submit" value="save" autofocus>Save</button>
-        <button type="submit" value="discard">Don't Save</button>
-        <button type="submit" value="cancel">Cancel</button>
+        <button type="button" data-choice="save" autofocus>Save</button>
+        <button type="button" data-choice="discard">Don't Save</button>
+        <button type="button" data-choice="cancel">Cancel</button>
       </div>
-    </form>
+    </div>
   </dialog>
 
   <!--
@@ -59,6 +65,7 @@
   <script src="export-html.js"></script>
   <script src="export-pdf.js"></script>
   <script src="close-guard.js"></script>
+  <script src="unsaved-dialog.js"></script>
   <script src="tauri-api.js"></script>
   <script src="renderer.js"></script>
 </body>
