@@ -148,6 +148,15 @@ fn get_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+// Save As PDF works by printing the export document from the WebView, and
+// WKWebView implements no print support at all, so the whole command is
+// Windows-only. The frontend asks here and hides it rather than offering a
+// button that silently does nothing.
+#[tauri::command]
+fn is_macos() -> bool {
+    cfg!(target_os = "macos")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -413,6 +422,15 @@ mod tests {
         assert_eq!(state.take_pending(), Some("/tmp/b.md".to_string()));
     }
 
+    // ---- is_macos --------------------------------------------------------
+
+    #[test]
+    fn is_macos_agrees_with_the_running_platform() {
+        // cfg! is resolved at compile time, env::consts::OS at run time; on a
+        // native build they must agree.
+        assert_eq!(is_macos(), std::env::consts::OS == "macos");
+    }
+
     // ---- get_version ----------------------------------------------------
 
     #[test]
@@ -459,7 +477,8 @@ fn main() {
             get_opened_file,
             set_title,
             open_external,
-            get_version
+            get_version,
+            is_macos
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

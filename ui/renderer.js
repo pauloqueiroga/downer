@@ -251,6 +251,22 @@ async function openFromDialog() {
   if (res) loadDocument(res.path, res.content);
 }
 
+// ---- Save As PDF availability --------------------------------------
+// Printing is how the PDF export works, and WKWebView cannot print, so the
+// command is hidden on macOS instead of being left to do nothing. Asked for
+// as early as possible so the button does not flash before it goes away.
+let pdfSupported = true;
+
+function setPdfSupported(supported) {
+  pdfSupported = supported;
+  const btn = document.querySelector('button[data-cmd="savepdf"]');
+  if (btn) btn.hidden = !supported;
+}
+
+Promise.resolve(window.api.isMacOS?.())
+  .then((isMac) => setPdfSupported(!isMac))
+  .catch(() => { /* keep it available: Windows is the common case */ });
+
 // ---- toolbar -------------------------------------------------------
 document.getElementById('toolbar').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-cmd]');
@@ -261,7 +277,7 @@ document.getElementById('toolbar').addEventListener('click', (e) => {
     case 'save': save(); break;
     case 'saveas': saveAs(); break;
     case 'savehtml': saveAsHtml(); break;
-    case 'savepdf': saveAsPdf(); break;
+    case 'savepdf': if (pdfSupported) saveAsPdf(); break;
     case 'about': window.api.about(); break;
   }
 });
@@ -335,7 +351,7 @@ function setupShortcuts() {
     if (!mod) return;
     const key = e.key.toLowerCase();
     if (key === 'h' && e.shiftKey) { e.preventDefault(); saveAsHtml(); }
-    else if (key === 'p' && e.shiftKey) { e.preventDefault(); saveAsPdf(); }
+    else if (key === 'p' && e.shiftKey && pdfSupported) { e.preventDefault(); saveAsPdf(); }
     else if (key === 's' && e.shiftKey) { e.preventDefault(); saveAs(); }
     else if (key === 's') { e.preventDefault(); save(); }
     else if (key === 'o') { e.preventDefault(); openFromDialog(); }

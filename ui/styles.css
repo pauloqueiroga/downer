@@ -86,6 +86,8 @@ body {
   flex: 0 0 auto;       /* a full bar of buttons: labels keep their width, on one line */
   white-space: nowrap;
 }
+/* Save As PDF is hidden on macOS; keep `hidden` winning over any button rule. */
+#toolbar button[hidden] { display: none; }
 #toolbar button:hover { background: var(--chrome-hover); }
 #toolbar button:active { transform: translateY(0.5px); }
 #toolbar .tb-spacer { flex: 1 1 auto; }
