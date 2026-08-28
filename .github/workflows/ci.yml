@@ -13,7 +13,6 @@ jobs:
     name: Build (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
     strategy:
-      # One platform breaking should not hide the state of the others.
       fail-fast: false
       matrix:
         include:
@@ -27,8 +26,6 @@ jobs:
             target: aarch64-apple-darwin
             bundle: dmg/*.dmg
             config: --config src-tauri/tauri.macos.conf.json
-          # Cross-compiled from the arm64 runner: the Intel macos-13 runner is
-          # on its way out, and the macOS SDK builds both archs either way.
           - platform: macos-x64
             os: macos-latest
             target: x86_64-apple-darwin
@@ -61,8 +58,6 @@ jobs:
       - name: Run UI tests
         run: npm test
 
-      # Deliberately not --target: a cross-compiled x86_64 test binary cannot
-      # run on the arm64 runner, and the logic under test is arch-independent.
       - name: Run Rust tests
         working-directory: src-tauri
         run: cargo test --locked
