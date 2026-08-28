@@ -1,6 +1,6 @@
 {
   "name": "downer",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A minimal, fast, local markdown editor: source on the left, live preview on the right. That's it.",
   "author": "PQ",
   "license": "MIT",
