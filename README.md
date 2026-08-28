@@ -192,6 +192,12 @@ the file loads into the existing window.
   `asset:` URLs there, since the page is printed from inside the app. WKWebView
   implements no print support at all, which leaves nothing to hook into, so the
   command is hidden on macOS instead of sitting there doing nothing.
+- The unsaved-changes prompt does not rely on `<dialog>` working. WKWebView
+  only learned the element in Safari 15.4, and an older one renders it as an
+  ordinary visible block — with a `<form method="dialog">` inside, every button
+  then submits for real and reloads the app. So the prompt is opened and closed
+  through the `open` attribute, which works anywhere, and `showModal()` is used
+  only where it exists, for the focus trap it brings.
 - The two systems hand over a double-clicked file differently: Windows puts the
   path in the command line and starts a fresh process per file, so several can
   sit side by side, while macOS sends an Apple Event to the single running

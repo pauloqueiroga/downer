@@ -37,7 +37,7 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 
 ## In Progress
 
-- macOS binaries (#8) — CI builds the arm64 and Intel `.dmg`s; opening a double-clicked `.md` still needs checking on real hardware
+- macOS binaries (#8) — CI builds the arm64 and Intel `.dmg`s. Tested on an Intel Mac: the unsaved-changes prompt reloaded the app in a loop (fixed), and opening a double-clicked `.md` still needs checking
 
 ---
 
