@@ -32,6 +32,7 @@ A lightweight Kanban-style board, version-controlled alongside the code.
 - GitHub releases
 - Sonarqube static analysis
 - GitHub Pages
+- Generated PDFs should not have "downer" as the title shown on previews and other apps that read PDF
 
 ---
 
